@@ -3,9 +3,8 @@
 declare(strict_types=1);
 
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: *");
-header("Access-Control-Allow-Methods: *");
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS, DELETE");
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -19,6 +18,18 @@ $app = AppFactory::create();
 
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
+
+$app->options('/{routes:.+}', function ($request, $response, $args) {
+    return $response;
+});
+
+$corsMiddleware = function ($request, $handler) {
+    $response = $handler->handle($request);
+    return $response
+        ->withHeader('Access-Control-Allow-Origin', '*')
+        ->withHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
+        ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+};
 
 $app->post('/', function (Request $request, Response $response) {
     $postDetails = $request->getParsedBody();
@@ -304,5 +315,7 @@ function moveUploadedFile($directory, \Psr\Http\Message\UploadedFileInterface $u
 
     return $filename;
 }
+
+$app->add($corsMiddleware);
 
 $app->run();
